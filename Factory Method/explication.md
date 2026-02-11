@@ -2,50 +2,54 @@
 
 ## 🎯 Problème qu’il résout
 
-Le design pattern Singleton résout deux problèmes importants.
+Le design pattern Factory Method résout un problème majeur de couplage fort.
 
-D'abord, avec une classe standard, à chaque fois qu'elle est instanciée, un nouvel objet est créé. Il peut donc y avoir plusieurs objets différents, initiés avec la même classe à différents endroits et différents moments. L'avantage du Singleton, c'est que l'on peut maîtriser le nombre d'instances d'une classe dans toute son application.
+Dans une application classique, on retrouve souvent des instanciations directe d'objets (l'utilisation de "new"). Dans ce cas, l'application dépend directement d'une classe précise, le jour où on doit remplacer cette classe ou en ajouter une nouvelle, on risque d'avoir de nombreux effets de bord.
 
-Ensuite, alors qu'avec une classe standard un objet peut être instancié n'importe où, n'importe quand et par n'importe qui, le Singleton ferme l'accès à la création. On ne peut créer une instance que depuis la classe elle-même.
+Le problème est qu'ici, on mélange la création et l'utilisation de l'objet. Pour une simple évolution, on se retrouve obligé de faire des modifications à plusieurs endroits, ce qui ne respecte pas le "Open/Closed Principle" des bonnes pratiques "SOLID".
 
 ## 🧠 Principe de fonctionnement
 
-Pour mettre en place un Singleton, il faut suivre une logique précise :
+Pour mettre en place une Factory Method, il faut laisser la création des objets à une méthode spéciale :
 
-- Il faut commencer par déclarer le constructeur comme private. Cela bloque l'accès à la création d'une instance depuis l'extérieur de la classe (le mot-clé new ... ne fonctionne plus ailleurs).
+- Une interface commune : On commence par définir une interface (ou une classe abstraite) que tous les objets créés devront respecter. Cela permet au reste du code de manipuler ces objets sans savoir ce qu'ils sont vraiment, tant qu'ils respectent le contrat.
 
-- On doit créer un attribut (souvent nommé instance) qui contiendra l'unique objet de la classe. Celui-ci doit être statique (pour que notre méthode d'initialisation puisse y accéder) et privé (afin d'empêcher sa modification).
+- Le Créateur (Factory) : On crée une classe qui contient une méthode de fabrication. Cette méthode a pour seul but d'initier et retourner un objet. On déclare cette méthode comme statique pour ne pas à avoir à instancier le factory avant.
 
-- Il faut créer une porte d'entrée contrôlée pour pouvoir instancier et utiliser cette classe. On crée donc une méthode statique et publique (pour y avoir accès n'importe où, et sans objet encore instancié).
+- Les classes : On crée autant de classe que l'on souhaite auxquels on assigne l'interface commune. Désormais, ces classes sont instanciables grâce au factory. 
 
-La logique de la méthode est simple : elle vérifie si l'attribut instance est null. Si c'est le cas, elle crée une nouvelle instance de la classe, sinon, elle retourne l'instance déjà existante stockée dans l'attribut.
-
-Grâce à ce design pattern, on répond aux deux problématiques : on gère le nombre d'instances d'une classe tout en la rendant accessible globalement, sans risquer que l'instance soit écrasée par erreur.
+Ainsi, ces classes ne se soucient plus de comment elles seront instanciés mais uniquement de leur logique métier.
 
 ## 🏗 Structure (rôles des classes)
 
-Le Singleton est très simple d'un point de vue struturelle, il ne comporte qu'une seule classe. Cependant, cette classe gère à la fois son travail métier mais aussi la gestion de son cycle de vie.
+Le Factory Method est plus complexe structurellement car il implique une hiérarchie de classes.
 
-On peut donc découper la structure en deux acteurs principaux, la gestion du cycle de vie, détaillé au dessus et la logique métier qui va varier en fonction de la classe.
+On peut découper la structure en deux familles d'acteurs :
+
+1. Le Créateur (Factory) : C'est la classe qui déclare la méthode de fabrication. Elle ne sait pas quel produit précis elle va manipuler, elle sait juste qu'il respecte l'interface.
+
+2. L'interface : C'est l'interface qui définit ce que les objets fabriqués ont en commun.
+
+3. Les classes concretes : Ce sont les classes qui implémentent l'interface.
 
 ## 📈 Avantages
 
-- Contrôle de l'instance : On est certain d'avoir uniquement une seule instance de cette classe.
+- Découplage : Le factory et les classes concretes sont indépendants. On peut ajouter de nouvelles classes sans casser le code existant. C'est une des bonnes pratiques "SOLID", le Open/Close Principle.
 
-- Point d'accès : L'instance est accessible de n'importe où dans le code via une méthode sécurisée.
+- Principe de Responsabilité Unique (SRP) : Le code de création et la logique métier sont séparés, rendant le code plus propre.
 
-- Initialisation : Le singleton est initialisé une seule fois seulement si l'on en a besoin.
+- Centralisation : Le mot-clé new n'apparaît qu'à un seul endroit (dans la Factory). Si la logique de création change, on ne modifie qu'un seul fichier.
 
 ## ⚠️ Inconvénients
 
-- Principe de Responsabilité Unique (SRP) : le singleton doit gérer deux choses : sa logique métier et son cycle de vie. C'est un manquement aux bonnes pratiques "SOLID".
+- Complexité du code : Le nombre de classes peut augmenter rapidement. Pour chaque nouvelle interface, on va devoir créer une nouvelle factory correspondante.
 
-- Couplage : Si la conception n'est pas bonne, il peut y avoir un fort couplage entre le singleton et les autres classes. Cela pourrait entraîner des effets de bord si l'instance du singleton est modifié.
-
-- Tests : À cause du constructeur privé et de la méthode statique, c'est plus compliqué de faire un mock du Singleton. Les tests sont donc plus difficiles à mettre en place.
+- Suroptimisation : Parfois, utiliser une simple instanciation suffit. Mettre en place toute la structure du Factory Method peut être excessif pour des petits projets.
 
 ## 🧩 Cas d’usage réel possible
 
-Pour illustrer ce design pattern, prenons l'exemple d'un aeroport avec plusieurs pistes. Si on avait plusieurs tours de controle (le singleton), alors l'un pourrait autoriser le décolage tandis que l'autre pourrais le refuser.
+Pour illustrer ce design pattern, prenons l'exemple d'un module de notifications. Au départ, l'application envoie uniquement des Emails.
 
-<a href="./example.php">Exemple de la tour de contrôle</a>
+Plus tard, on veut ajouter l'envoi de SMS. Grâce au Factory Method et à notre interface, il nous reste plus qu'à créer la classe SMS avec ses différentes méthodes.
+
+<a href="./example.php">Exemple du système de notifications</a>
